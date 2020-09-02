@@ -1,0 +1,178 @@
+---
+title: "HW2"
+author: "Romario"
+date: "8/28/2020"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Load libraries 
+
+```{r}
+library(readr) #for reading csv file (read_csv())
+library(dplyr)
+```
+
+
+### 1. Import class one survey data from our Github site (https://github.com/kijohnson/ADA-FAll-2020) (The dataset called ‘Class 1 Survey Fall 2020.csv’ is located in the class one folder), calling the R dataframe that you create C1survey.
+
+```{r}
+C1survey <- 
+  read.csv(
+    "https://raw.githubusercontent.com/kijohnson/ADA-FAll-2020/master/Class%20One/Class%201%20Survey%20Fall%202020.csv"
+  )
+```
+
+### 2. Determine: a. the number of observations (i.e. the number of people who filled out the survey) and b. the number of variables in the dataframe.
+
+### a. 32 observations 
+
+### b. 27 variables
+
+```{r}
+#find the number of observations and number of variables in dataframe
+dim(C1survey)
+```
+
+### 3. a. Rename the column variables to something shorter and that is descriptive of what the variable is about (for example like_dogs for the ‘Do you like dogs?’ question variable) and b. Display that they are renamed.
+
+```{r}
+#list variable names 
+colnames(C1survey)
+
+#rename variables 
+names(C1survey)[2:27]<- c("like.dogs", "like.cats", 
+                          "stranded.item", "life.slogan", 
+                          "favorite.day", "bird.choice", 
+                          "favorite.food", "favorite.drink", 
+                          "favorite.season", "favorite.month", 
+                          "one.hobby", "degree.program", 
+                          "primary.specialization", 
+                          "primary.stat.software", 
+                          "level.R.experience", 
+                          "coding.comfortability", 
+                          "coding.length", "course.hopes", 
+                          "ph.interest.area", "favorite.number", 
+                          "birth.day", "birth.month", 
+                          "home.country", "home.state", 
+                          "home.city", "highest.edu.level")
+# Check to see if it worked 
+names(C1survey)
+```
+
+### 4. Write code to determine and display the number of factor, integer, numerical, and character variables there are in the C1survey dataset.
+
+```{r}
+table(sapply(C1survey, class))
+```
+
+### 5. a. Using code, check the bday and bmonth variables for any unusual or missing values. If you find any, b. describe what you will do with the unusual values in a comment before or immediately following the code that does it, and c. after you have cleaned up any unusual values, find the median bday and month. *Note: please make sure that your bday and month variables are numeric before doing statistics
+
+```{r}
+#observe unusual or missing values 
+C1survey$birth.day
+
+C1survey$birth.month
+
+# Change the unusual observation values for each variable to match all entries 
+C1survey[31, "birth.day"] <- "26"
+
+C1survey[8, "birth.month"]<-"12"
+C1survey[17,"birth.month"]<-"8"
+C1survey[25,"birth.month"]<-"8"
+C1survey[31, "birth.month"]<-"3"
+
+
+#double check 
+C1survey$birth.day
+
+#double check 
+C1survey$birth.month
+
+#convert variables to numeric
+C1survey$birth.day.n<-as.numeric(C1survey$birth.day)
+
+C1survey$birth.month.n<-as.numeric(C1survey$birth.month)
+
+#find the median for both variables
+median(C1survey$birth.day.n, na.rm=TRUE)
+median(C1survey$birth.month.n, na.rm=TRUE)
+```
+
+### 6. a. Create a new variable called bseason that gives the season according to Northern Meteorological season in which respondents were born (winter=12/1 to 2/29, spring=3/1 to 5/31, summer=6/1 to 8/31, fall=9/1 to 11/30). b. Using the table function, print a table of Seasons in the columns and bmonths in the rows that allows you to check that the coding is correct c. Sum the columns using the addmargins function to answer the question of how many classmates were born in each season? Include your answer in the code you turn in.
+
+```{r}
+#create new variable 
+C1survey <-C1survey %>% 
+  mutate (bseason = case_when(
+      birth.month.n %in% c(1,2,12)~ "winter", 
+      birth.month.n %in% c(3,4,5)~"spring", 
+      birth.month.n %in% c(6,7,8)~"summer", 
+      birth.month.n %in% c(9,10,11)~ "fall"
+      ))
+```
+
+
+```{r}
+#table the variables 
+Tbl <- table(C1survey$birth.month.n,C1survey$bseason)
+Tbl #print information
+```
+
+
+```{r}
+#find total number of classmates born in each season
+addmargins(Tbl, margin = seq_along(dim(Tbl)), FUN = sum, quiet = FALSE) 
+
+# Sums of classmates born in different seasons: Fall=10, Spring=7, Summer=9, Winter=6
+```
+
+### 7. Pick your favorite variable to analyze, come up with a question you want to answer with that variable, generate the code, and provide an answer to your question. Describe what you did using comments (i.e. #’s).
+
+#### Research Question: What regions of the world are represented in the sample? Calculate the percentages of the regions represented
+
+```{r}
+#view variable names 
+names(C1survey)
+
+#view entries for home country variable
+(C1survey$home.country)
+
+#rename entries with unusual wording, capitalization etc 
+C1survey[9, "home.country"] <- "United States"
+C1survey[10, "home.country"] <- "United States"
+C1survey[18, "home.country"] <- "United States"
+C1survey[30, "home.country"] <- "United States"
+C1survey[8, "home.country"] <- "Pakistan"
+C1survey[11, "home.country"] <- "India"
+C1survey[29, "home.country"] <- "China"
+
+#double check 
+(C1survey$home.country)
+
+#create a new variable and group countries into categorical regions
+C1survey <-C1survey %>% 
+  mutate(region = case_when(
+      home.country %in% c("Ghana", "Nigeria")~ "West Africa",
+      home.country %in% c("Uganda") ~"East Africa",
+      home.country %in% c("Namibia") ~"Southern Africa", 
+      home.country %in% c("United States") ~"North America", 
+      home.country %in% c("India", "Pakistan") ~"South Asia", 
+      home.country %in% c("China", "South Korea") ~"East Asia",
+      home.country %in% c("Saudi Arabia") ~"Western Asia",
+      home.country %in% c("France") ~"Western Europe"
+      ))
+
+#table the variable
+tblr<-table(C1survey$region)
+tblr #check to see if it worked
+
+#sum totals
+addmargins(tblr)
+
+#calculate proportion and round to whole numbers
+prop.table(tblr)
+round(100*prop.table(tblr), digits=0)
+```
+
